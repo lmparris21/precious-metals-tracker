@@ -1,3 +1,6 @@
+import { config } from 'dotenv'
+config()
+
 import express from 'express'
 import cors from 'cors'
 import pieceRoutes from './routes/pieces.js'

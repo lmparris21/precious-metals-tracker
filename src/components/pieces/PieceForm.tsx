@@ -13,6 +13,7 @@ interface FormState {
   weight_oz: string
   weight_unit: string
   purity: string
+  quantity: string
   is_graded: boolean
   grading_service: string
   grade: string
@@ -31,6 +32,7 @@ const DEFAULT_FORM: FormState = {
   weight_oz: '1',
   weight_unit: 'oz',
   purity: '0.999',
+  quantity: '1',
   is_graded: false,
   grading_service: '',
   grade: '',
@@ -63,6 +65,7 @@ export default function PieceForm() {
         weight_oz: piece.weight_oz.toString(),
         weight_unit: piece.weight_unit,
         purity: piece.purity.toString(),
+        quantity: piece.quantity?.toString() ?? '1',
         is_graded: Boolean(piece.is_graded),
         grading_service: piece.grading_service ?? '',
         grade: piece.grade ?? '',
@@ -103,6 +106,7 @@ export default function PieceForm() {
       weight_oz: Number(form.weight_oz),
       weight_unit: form.weight_unit as Piece['weight_unit'],
       purity: Number(form.purity),
+      quantity: Number(form.quantity) || 1,
       is_graded: form.is_graded,
       grading_service: form.is_graded ? form.grading_service || undefined : undefined,
       grade: form.is_graded ? form.grade || undefined : undefined,
@@ -118,10 +122,11 @@ export default function PieceForm() {
         ? await updatePiece(Number(id), data)
         : await createPiece(data)
 
-      // Show photo upload step instead of immediately navigating
-      setSavedPieceId(piece.id)
+      // Fetch photos first, then reveal the photo step in one render so
+      // PhotoUpload mounts with the correct initialPhotos already set
       const fullPiece = await getPiece(piece.id)
       setSavedPiecePhotos(fullPiece.photos ?? [])
+      setSavedPieceId(piece.id)
       setLoading(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save piece')
@@ -219,10 +224,17 @@ export default function PieceForm() {
             </div>
           </div>
 
-          <div>
-            <label className={labelCls}>Year</label>
-            <input type="number" min="1700" max="2100" value={form.year}
-              onChange={e => set('year', e.target.value)} placeholder="e.g. 2024" className={inputCls} />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Year</label>
+              <input type="number" min="1700" max="2100" value={form.year}
+                onChange={e => set('year', e.target.value)} placeholder="e.g. 2024" className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>Quantity</label>
+              <input required type="number" min="1" step="1" value={form.quantity}
+                onChange={e => set('quantity', e.target.value)} className={inputCls} />
+            </div>
           </div>
         </div>
 

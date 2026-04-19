@@ -1,9 +1,16 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getPieces, deletePiece } from '../../api/pieces'
-import type { Piece } from '../../types/piece'
+import { getPieces, deletePiece, getPiece } from '../../api/pieces'
+import type { Piece, Photo } from '../../types/piece'
+import PhotoLightbox from '../pieces/PhotoLightbox'
 
 type ViewMode = 'grid' | 'table'
+
+interface LightboxState {
+  photos: Photo[]
+  index: number
+  pieceName: string
+}
 
 const METAL_COLORS: Record<string, string> = {
   silver: 'bg-gray-600 text-gray-200',
@@ -22,8 +29,8 @@ export default function Collection() {
   const [pieces, setPieces] = useState<Piece[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
+  const [lightbox, setLightbox] = useState<LightboxState | null>(null)
 
-  // Filters
   const [metalFilter, setMetalFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [gradedFilter, setGradedFilter] = useState('')
@@ -50,6 +57,14 @@ export default function Collection() {
 
   useEffect(() => { fetchPieces() }, [fetchPieces])
 
+  async function openLightbox(e: React.MouseEvent, piece: Piece, startIndex = 0) {
+    e.stopPropagation()
+    const full = await getPiece(piece.id)
+    if (full.photos && full.photos.length > 0) {
+      setLightbox({ photos: full.photos, index: startIndex, pieceName: piece.name })
+    }
+  }
+
   async function handleDelete(e: React.MouseEvent, piece: Piece) {
     e.stopPropagation()
     if (!window.confirm(`Delete "${piece.name}"? This cannot be undone.`)) return
@@ -59,6 +74,16 @@ export default function Collection() {
 
   return (
     <div>
+      {lightbox && (
+        <PhotoLightbox
+          photos={lightbox.photos}
+          index={lightbox.index}
+          pieceName={lightbox.pieceName}
+          onClose={() => setLightbox(null)}
+          onNavigate={i => setLightbox(lb => lb ? { ...lb, index: i } : null)}
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-yellow-400">Collection</h1>
@@ -129,46 +154,80 @@ export default function Collection() {
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {pieces.map(piece => (
-            <div key={piece.id}
-              onClick={() => navigate(`/pieces/${piece.id}/edit`)}
-              className="bg-gray-900 border border-gray-800 rounded-lg p-4 cursor-pointer hover:border-gray-600 transition-colors">
-              {piece.first_photo ? (
-                <img src={`/api/photos/${piece.first_photo}`} alt={piece.name}
-                  className="w-full h-36 object-cover rounded mb-3" />
-              ) : (
-                <div className="w-full h-36 bg-gray-800 rounded mb-3 flex items-center justify-center text-gray-600 text-3xl">🪙</div>
+            <div key={piece.id} className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden hover:border-gray-600 transition-colors">
+
+              {/* Photo area — click opens lightbox */}
+              {piece.photo_filenames ? (() => {
+                const all = piece.photo_filenames!.split(',')
+                const visible = all.slice(0, 2)
+                const overflow = all.length - 2
+                return (
+                  <div className="flex bg-gray-800 h-40">
+                    {visible.map((filename, i) => (
+                      <div key={filename} className="relative flex-1 min-w-0 h-full" style={{ borderLeft: i > 0 ? '1px solid #111827' : undefined }}>
+                        <img
+                          src={`/api/photos/${filename}`}
+                          alt={`${piece.name} photo ${i + 1}`}
+                          onClick={e => openLightbox(e, piece, i)}
+                          className="w-full h-full object-contain cursor-zoom-in hover:brightness-110 transition-all"
+                        />
+                        {i === 1 && overflow > 0 && (
+                          <div
+                            onClick={e => openLightbox(e, piece, 2)}
+                            className="absolute inset-0 bg-black/60 flex items-center justify-center cursor-zoom-in hover:bg-black/50 transition-colors"
+                          >
+                            <span className="text-white font-semibold text-lg">+{overflow}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )
+              })() : (
+                <div className="w-full h-40 bg-gray-800 flex items-center justify-center text-gray-600 text-4xl">🪙</div>
               )}
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="font-semibold text-gray-100 text-sm leading-tight">{piece.name}</p>
-                  {piece.year && <p className="text-gray-500 text-xs">{piece.year}</p>}
+
+              {/* Card body — click goes to edit */}
+              <div
+                className="p-4 cursor-pointer"
+                onClick={() => navigate(`/pieces/${piece.id}/edit`)}
+              >
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div>
+                    <p className="font-semibold text-gray-100 text-sm leading-tight">{piece.name}</p>
+                    {!!piece.year && <p className="text-gray-500 text-xs">{piece.year}</p>}
+                    {!!piece.is_graded && (
+                      <p className="text-blue-400 text-xs">{piece.grading_service} {piece.grade}</p>
+                    )}
+                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded font-medium shrink-0 ${METAL_COLORS[piece.metal_type] ?? 'bg-gray-700 text-gray-300'}`}>
+                    {piece.metal_type}
+                  </span>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded font-medium shrink-0 ${METAL_COLORS[piece.metal_type] ?? 'bg-gray-700 text-gray-300'}`}>
-                  {piece.metal_type}
-                </span>
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <p className="text-gray-500">Melt Value</p>
-                  <p className="text-green-400 font-medium">{formatCurrency(piece.melt_value)}</p>
+
+                <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                  <div>
+                    <p className="text-gray-500">Melt Value</p>
+                    <p className="text-green-400 font-medium">{formatCurrency(piece.melt_value)}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Est. Value</p>
+                    <p className="text-gray-200 font-medium">{formatCurrency(piece.estimated_value)}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-gray-500">Est. Value</p>
-                  <p className="text-gray-200 font-medium">{formatCurrency(piece.estimated_value)}</p>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 text-xs">
+                    {piece.weight_oz}oz · {(Number(piece.purity) * 100).toFixed(1)}%
+                    {piece.quantity > 1 && <span className="ml-1 text-yellow-500 font-medium">×{piece.quantity}</span>}
+                  </span>
+                  <button
+                    onClick={e => handleDelete(e, piece)}
+                    className="text-red-600 hover:text-red-400 text-xs px-2 py-1 rounded hover:bg-red-900/20"
+                  >
+                    Delete
+                  </button>
                 </div>
-              </div>
-              {piece.is_graded && (
-                <div className="mt-2 text-xs text-blue-400">
-                  {piece.grading_service} {piece.grade}
-                </div>
-              )}
-              <div className="mt-3 flex justify-between items-center">
-                <span className="text-gray-600 text-xs">{piece.weight_oz}oz · {(Number(piece.purity) * 100).toFixed(1)}%</span>
-                <button
-                  onClick={e => handleDelete(e, piece)}
-                  className="text-red-600 hover:text-red-400 text-xs px-2 py-1 rounded hover:bg-red-900/20">
-                  Delete
-                </button>
               </div>
             </div>
           ))}
@@ -178,9 +237,11 @@ export default function Collection() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-800 text-gray-400 text-left">
+                <th className="pb-2 pr-4 w-20">Photos</th>
                 <th className="pb-2 pr-4">Name</th>
                 <th className="pb-2 pr-4">Metal</th>
                 <th className="pb-2 pr-4">Type</th>
+                <th className="pb-2 pr-4">Qty</th>
                 <th className="pb-2 pr-4">Weight</th>
                 <th className="pb-2 pr-4">Melt Value</th>
                 <th className="pb-2 pr-4">Est. Value</th>
@@ -192,11 +253,45 @@ export default function Collection() {
               {pieces.map(piece => (
                 <tr key={piece.id}
                   onClick={() => navigate(`/pieces/${piece.id}/edit`)}
-                  className="border-b border-gray-800/50 hover:bg-gray-900 cursor-pointer">
+                  className="border-b border-gray-800/50 hover:bg-gray-900/50 cursor-pointer">
+
+                  {/* Photos cell */}
+                  <td className="py-2 pr-4" onClick={e => e.stopPropagation()}>
+                    {piece.photo_filenames ? (() => {
+                      const all = piece.photo_filenames!.split(',')
+                      const visible = all.slice(0, 2)
+                      const overflow = all.length - 2
+                      return (
+                        <div className="flex gap-1 items-center">
+                          {visible.map((filename, i) => (
+                            <div key={filename} className="relative">
+                              <img
+                                src={`/api/photos/${filename}`}
+                                alt={piece.name}
+                                onClick={e => openLightbox(e, piece, i)}
+                                className="w-10 h-10 object-contain bg-gray-800 rounded cursor-zoom-in hover:ring-2 hover:ring-yellow-400"
+                              />
+                              {i === 1 && overflow > 0 && (
+                                <div
+                                  onClick={e => openLightbox(e, piece, 2)}
+                                  className="absolute inset-0 bg-black/60 rounded flex items-center justify-center cursor-zoom-in"
+                                >
+                                  <span className="text-white text-xs font-semibold">+{overflow}</span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    })() : (
+                      <span className="text-gray-700 text-lg">🪙</span>
+                    )}
+                  </td>
+
                   <td className="py-2 pr-4">
                     <div className="text-gray-100">{piece.name}</div>
-                    {piece.year && <div className="text-gray-500 text-xs">{piece.year}</div>}
-                    {piece.is_graded && <div className="text-blue-400 text-xs">{piece.grading_service} {piece.grade}</div>}
+                    {!!piece.year && <div className="text-gray-500 text-xs">{piece.year}</div>}
+                    {!!piece.is_graded && <div className="text-blue-400 text-xs">{piece.grading_service} {piece.grade}</div>}
                   </td>
                   <td className="py-2 pr-4">
                     <span className={`text-xs px-2 py-0.5 rounded font-medium ${METAL_COLORS[piece.metal_type] ?? 'bg-gray-700 text-gray-300'}`}>
@@ -204,6 +299,7 @@ export default function Collection() {
                     </span>
                   </td>
                   <td className="py-2 pr-4 text-gray-300 capitalize">{piece.piece_type}</td>
+                  <td className="py-2 pr-4 text-gray-300">{piece.quantity ?? 1}</td>
                   <td className="py-2 pr-4 text-gray-300">{piece.weight_oz}oz</td>
                   <td className="py-2 pr-4 text-green-400">{formatCurrency(piece.melt_value)}</td>
                   <td className="py-2 pr-4 text-gray-200">{formatCurrency(piece.estimated_value)}</td>

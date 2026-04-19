@@ -7,6 +7,7 @@ export interface Piece {
   weight_oz: number
   weight_unit: 'oz' | 'g' | 'kg'
   purity: number
+  quantity: number
   is_graded: boolean
   grading_service?: string
   grade?: string
@@ -21,6 +22,7 @@ export interface Piece {
   photos?: Photo[]
   photo_count?: number
   first_photo?: string
+  photo_filenames?: string
 }
 
 export interface Photo {

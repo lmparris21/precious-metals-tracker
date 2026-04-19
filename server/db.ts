@@ -34,6 +34,7 @@ db.exec(`
     purchase_price REAL,
     purchase_date TEXT,
     estimated_value REAL,
+    quantity INTEGER NOT NULL DEFAULT 1,
     notes TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -67,6 +68,12 @@ db.exec(`
     mint TEXT
   );
 `)
+
+// Migrate: add quantity column if it doesn't exist (for existing DBs)
+const cols = db.prepare("PRAGMA table_info(pieces)").all() as { name: string }[]
+if (!cols.some(c => c.name === 'quantity')) {
+  db.exec("ALTER TABLE pieces ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1")
+}
 
 // Seed spot prices if not present
 const existingSpotPrices = db.prepare('SELECT COUNT(*) as count FROM spot_prices').get() as { count: number }

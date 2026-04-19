@@ -50,9 +50,9 @@ router.get('/api/pieces', (req, res) => {
   const sql = `
     SELECT
       p.*,
-      ROUND(p.weight_oz * p.purity * COALESCE(sp.price_per_oz, 0), 2) AS melt_value,
+      ROUND(p.weight_oz * p.purity * COALESCE(sp.price_per_oz, 0) * p.quantity, 2) AS melt_value,
       COUNT(pp.id) AS photo_count,
-      MIN(pp.filename) AS first_photo
+      (SELECT GROUP_CONCAT(filename, ',') FROM (SELECT filename FROM piece_photos WHERE piece_id = p.id ORDER BY sort_order ASC)) AS photo_filenames
     FROM pieces p
     LEFT JOIN spot_prices sp ON sp.metal_type = p.metal_type
     LEFT JOIN piece_photos pp ON pp.piece_id = p.id
@@ -72,7 +72,7 @@ router.get('/api/pieces/:id', (req, res) => {
   const piece = db.prepare(`
     SELECT
       p.*,
-      ROUND(p.weight_oz * p.purity * COALESCE(sp.price_per_oz, 0), 2) AS melt_value
+      ROUND(p.weight_oz * p.purity * COALESCE(sp.price_per_oz, 0) * p.quantity, 2) AS melt_value
     FROM pieces p
     LEFT JOIN spot_prices sp ON sp.metal_type = p.metal_type
     WHERE p.id = ?
@@ -93,7 +93,7 @@ router.post('/api/pieces', (req, res) => {
   const {
     metal_type, piece_type, name, year, weight_oz, weight_unit,
     purity, is_graded, grading_service, grade, cert_number,
-    purchase_price, purchase_date, estimated_value, notes
+    purchase_price, purchase_date, estimated_value, quantity, notes
   } = req.body
 
   if (!metal_type || !piece_type || !name || weight_oz == null || purity == null) {
@@ -105,18 +105,18 @@ router.post('/api/pieces', (req, res) => {
     INSERT INTO pieces (
       metal_type, piece_type, name, year, weight_oz, weight_unit,
       purity, is_graded, grading_service, grade, cert_number,
-      purchase_price, purchase_date, estimated_value, notes
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      purchase_price, purchase_date, estimated_value, quantity, notes
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     metal_type, piece_type, name, year ?? null, weight_oz, weight_unit ?? 'oz',
     purity, is_graded ? 1 : 0, grading_service ?? null, grade ?? null, cert_number ?? null,
-    purchase_price ?? null, purchase_date ?? null, estimated_value ?? null, notes ?? null
+    purchase_price ?? null, purchase_date ?? null, estimated_value ?? null, quantity ?? 1, notes ?? null
   )
 
   const newPiece = db.prepare(`
     SELECT
       p.*,
-      ROUND(p.weight_oz * p.purity * COALESCE(sp.price_per_oz, 0), 2) AS melt_value
+      ROUND(p.weight_oz * p.purity * COALESCE(sp.price_per_oz, 0) * p.quantity, 2) AS melt_value
     FROM pieces p
     LEFT JOIN spot_prices sp ON sp.metal_type = p.metal_type
     WHERE p.id = ?
@@ -131,7 +131,7 @@ router.put('/api/pieces/:id', (req, res) => {
   const {
     metal_type, piece_type, name, year, weight_oz, weight_unit,
     purity, is_graded, grading_service, grade, cert_number,
-    purchase_price, purchase_date, estimated_value, notes
+    purchase_price, purchase_date, estimated_value, quantity, notes
   } = req.body
 
   const existing = db.prepare('SELECT id FROM pieces WHERE id = ?').get(id)
@@ -149,20 +149,20 @@ router.put('/api/pieces/:id', (req, res) => {
     UPDATE pieces SET
       metal_type = ?, piece_type = ?, name = ?, year = ?, weight_oz = ?, weight_unit = ?,
       purity = ?, is_graded = ?, grading_service = ?, grade = ?, cert_number = ?,
-      purchase_price = ?, purchase_date = ?, estimated_value = ?, notes = ?,
+      purchase_price = ?, purchase_date = ?, estimated_value = ?, quantity = ?, notes = ?,
       updated_at = datetime('now')
     WHERE id = ?
   `).run(
     metal_type, piece_type, name, year ?? null, weight_oz, weight_unit ?? 'oz',
     purity, is_graded ? 1 : 0, grading_service ?? null, grade ?? null, cert_number ?? null,
-    purchase_price ?? null, purchase_date ?? null, estimated_value ?? null, notes ?? null,
+    purchase_price ?? null, purchase_date ?? null, estimated_value ?? null, quantity ?? 1, notes ?? null,
     id
   )
 
   const updated = db.prepare(`
     SELECT
       p.*,
-      ROUND(p.weight_oz * p.purity * COALESCE(sp.price_per_oz, 0), 2) AS melt_value
+      ROUND(p.weight_oz * p.purity * COALESCE(sp.price_per_oz, 0) * p.quantity, 2) AS melt_value
     FROM pieces p
     LEFT JOIN spot_prices sp ON sp.metal_type = p.metal_type
     WHERE p.id = ?
@@ -282,11 +282,11 @@ router.get('/api/photos/:filename', (req, res) => {
 router.get('/api/summary', (_req, res) => {
   const totals = db.prepare(`
     SELECT
-      COUNT(*) AS total_pieces,
-      SUM(CASE WHEN is_graded = 1 THEN 1 ELSE 0 END) AS graded_count,
-      SUM(CASE WHEN is_graded = 0 THEN 1 ELSE 0 END) AS raw_count,
-      COALESCE(SUM(purchase_price), 0) AS total_purchase_cost,
-      COALESCE(SUM(estimated_value), 0) AS total_estimated_value
+      COALESCE(SUM(quantity), 0) AS total_pieces,
+      SUM(CASE WHEN is_graded = 1 THEN quantity ELSE 0 END) AS graded_count,
+      SUM(CASE WHEN is_graded = 0 THEN quantity ELSE 0 END) AS raw_count,
+      COALESCE(SUM(purchase_price * quantity), 0) AS total_purchase_cost,
+      COALESCE(SUM(estimated_value * quantity), 0) AS total_estimated_value
     FROM pieces
   `).get() as {
     total_pieces: number
@@ -299,12 +299,12 @@ router.get('/api/summary', (_req, res) => {
   const byMetal = db.prepare(`
     SELECT
       p.metal_type,
-      COUNT(*) AS count,
-      COALESCE(SUM(p.weight_oz), 0) AS total_weight_oz,
-      COALESCE(SUM(p.weight_oz * p.purity), 0) AS total_pure_oz,
-      COALESCE(SUM(p.purchase_price), 0) AS total_purchase_cost,
-      COALESCE(SUM(ROUND(p.weight_oz * p.purity * COALESCE(sp.price_per_oz, 0), 2)), 0) AS total_melt_value,
-      COALESCE(SUM(p.estimated_value), 0) AS total_estimated_value,
+      COALESCE(SUM(p.quantity), 0) AS count,
+      COALESCE(SUM(p.weight_oz * p.quantity), 0) AS total_weight_oz,
+      COALESCE(SUM(p.weight_oz * p.purity * p.quantity), 0) AS total_pure_oz,
+      COALESCE(SUM(p.purchase_price * p.quantity), 0) AS total_purchase_cost,
+      COALESCE(SUM(ROUND(p.weight_oz * p.purity * COALESCE(sp.price_per_oz, 0) * p.quantity, 2)), 0) AS total_melt_value,
+      COALESCE(SUM(p.estimated_value * p.quantity), 0) AS total_estimated_value,
       COALESCE(sp.price_per_oz, 0) AS spot_price
     FROM pieces p
     LEFT JOIN spot_prices sp ON sp.metal_type = p.metal_type
