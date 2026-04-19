@@ -1,22 +1,29 @@
 import express from 'express'
 import cors from 'cors'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import pieceRoutes from './routes/pieces.js'
+import catalogRoutes from './routes/catalog.js'
+import spotPriceRoutes from './routes/spot-prices.js'
+import './db.js' // ensure DB is initialized
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
 const PORT = 3001
 
-app.use(cors())
+app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:4173'] }))
 app.use(express.json())
 
-// Routes will be added here
+app.use(pieceRoutes)
+app.use(catalogRoutes)
+app.use(spotPriceRoutes)
+
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' })
+})
+
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error(err)
+  res.status(500).json({ error: err.message || 'Internal Server Error' })
 })
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)
 })
-
-export default app

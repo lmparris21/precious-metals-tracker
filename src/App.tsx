@@ -1,8 +1,23 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import Layout from './components/Layout'
+import Dashboard from './components/dashboard/Dashboard'
+import Collection from './components/collection/Collection'
+import PieceForm from './components/pieces/PieceForm'
+import Settings from './components/settings/Settings'
+
 export default function App() {
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 p-8">
-      <h1 className="text-3xl font-bold text-yellow-400">Precious Metals Tracker</h1>
-      <p className="text-gray-400 mt-2">Loading...</p>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/collection" element={<Collection />} />
+          <Route path="/pieces/new" element={<PieceForm />} />
+          <Route path="/pieces/:id/edit" element={<PieceForm />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   )
 }
