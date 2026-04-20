@@ -6,6 +6,7 @@ export async function getPieces(params?: {
   is_graded?: boolean
   q?: string
   sort?: string
+  sort_dir?: 'asc' | 'desc'
 }): Promise<Piece[]> {
   const query = new URLSearchParams()
   if (params?.metal_type) query.set('metal_type', params.metal_type)
@@ -13,6 +14,7 @@ export async function getPieces(params?: {
   if (params?.is_graded !== undefined) query.set('is_graded', params.is_graded ? '1' : '0')
   if (params?.q) query.set('q', params.q)
   if (params?.sort) query.set('sort', params.sort)
+  if (params?.sort_dir) query.set('sort_dir', params.sort_dir)
   const res = await fetch(`/api/pieces?${query}`)
   if (!res.ok) throw new Error('Failed to fetch pieces')
   return res.json()

@@ -12,7 +12,7 @@ const router = express.Router()
 
 // GET /api/pieces — list all pieces with optional filters and sorting
 router.get('/api/pieces', (req, res) => {
-  const { metal_type, piece_type, is_graded, q, sort } = req.query
+  const { metal_type, piece_type, is_graded, q, sort, sort_dir } = req.query
 
   const conditions: string[] = []
   const params: (string | number)[] = []
@@ -42,9 +42,11 @@ router.get('/api/pieces', (req, res) => {
     purchase_price: 'p.purchase_price',
     melt_value: 'melt_value',
     estimated_value: 'p.estimated_value',
+    created_at: 'p.created_at',
   }
+  const dir = sort_dir === 'asc' ? 'ASC' : 'DESC'
   const orderBy = sort && allowedSorts[sort as string]
-    ? allowedSorts[sort as string]
+    ? `${allowedSorts[sort as string]} ${dir}`
     : 'p.created_at DESC'
 
   const sql = `

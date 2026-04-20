@@ -36,6 +36,31 @@ export default function Collection() {
   const [gradedFilter, setGradedFilter] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('created_at')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+
+  function handleSort(col: string) {
+    if (col === sortBy) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(col)
+      setSortDir('asc')
+    }
+  }
+
+  function SortTh({ col, children }: { col: string; children: React.ReactNode }) {
+    const active = sortBy === col
+    return (
+      <th
+        className="pb-2 pr-4 cursor-pointer select-none hover:text-gray-200 whitespace-nowrap"
+        onClick={() => handleSort(col)}
+      >
+        {children}
+        <span className="ml-1 text-xs">
+          {active ? (sortDir === 'asc' ? '↑' : '↓') : <span className="opacity-30">↕</span>}
+        </span>
+      </th>
+    )
+  }
 
   const fetchPieces = useCallback(async () => {
     setLoading(true)
@@ -46,6 +71,7 @@ export default function Collection() {
         is_graded: gradedFilter === 'graded' ? true : gradedFilter === 'raw' ? false : undefined,
         q: searchQuery || undefined,
         sort: sortBy,
+        sort_dir: sortDir,
       })
       setPieces(data)
     } catch {
@@ -53,7 +79,7 @@ export default function Collection() {
     } finally {
       setLoading(false)
     }
-  }, [metalFilter, typeFilter, gradedFilter, searchQuery, sortBy])
+  }, [metalFilter, typeFilter, gradedFilter, searchQuery, sortBy, sortDir])
 
   useEffect(() => { fetchPieces() }, [fetchPieces])
 
@@ -63,6 +89,51 @@ export default function Collection() {
     if (full.photos && full.photos.length > 0) {
       setLightbox({ photos: full.photos, index: startIndex, pieceName: piece.name })
     }
+  }
+
+  function exportCSV() {
+    const headers = [
+      'Name', 'Year', 'Metal', 'Type', 'Weight (oz)', 'Weight Unit', 'Purity',
+      'Quantity', 'Graded', 'Grading Service', 'Grade', 'Cert Number',
+      'Purchase Price', 'Purchase Date', 'Estimated Value', 'Melt Value', 'Notes'
+    ]
+
+    const escape = (v: string | number | undefined | null) => {
+      if (v == null) return ''
+      const s = String(v)
+      return s.includes(',') || s.includes('"') || s.includes('\n')
+        ? `"${s.replace(/"/g, '""')}"`
+        : s
+    }
+
+    const rows = pieces.map(p => [
+      escape(p.name),
+      escape(p.year),
+      escape(p.metal_type),
+      escape(p.piece_type),
+      escape(p.weight_oz),
+      escape(p.weight_unit),
+      escape(p.purity),
+      escape(p.quantity),
+      escape(p.is_graded ? 'Yes' : 'No'),
+      escape(p.grading_service),
+      escape(p.grade),
+      escape(p.cert_number),
+      escape(p.purchase_price),
+      escape(p.purchase_date),
+      escape(p.estimated_value),
+      escape(p.melt_value),
+      escape(p.notes),
+    ].join(','))
+
+    const csv = [headers.join(','), ...rows].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `metals-collection-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   async function handleDelete(e: React.MouseEvent, piece: Piece) {
@@ -93,9 +164,15 @@ export default function Collection() {
             Grid
           </button>
           <button onClick={() => setViewMode('table')}
-            className={`px-3 py-1 rounded text-sm ${viewMode === 'table' ? 'bg-yellow-500 text-gray-950 font-semibold' : 'bg-gray-800 text-gray-400'}`}>
+            className={`px-3 py-1 rounded text-sm ${viewMode === 'table' ? 'bg-yellow-500 text-gray-950 font-semibond' : 'bg-gray-800 text-gray-400'}`}>
             Table
           </button>
+          {pieces.length > 0 && (
+            <button onClick={exportCSV}
+              className="px-3 py-1 rounded text-sm bg-gray-800 text-gray-400 hover:text-gray-200">
+              ↓ CSV
+            </button>
+          )}
         </div>
       </div>
 
@@ -238,14 +315,15 @@ export default function Collection() {
             <thead>
               <tr className="border-b border-gray-800 text-gray-400 text-left">
                 <th className="pb-2 pr-4 w-20">Photos</th>
-                <th className="pb-2 pr-4">Name</th>
+                <SortTh col="name">Name</SortTh>
                 <th className="pb-2 pr-4">Metal</th>
                 <th className="pb-2 pr-4">Type</th>
                 <th className="pb-2 pr-4">Qty</th>
                 <th className="pb-2 pr-4">Weight</th>
-                <th className="pb-2 pr-4">Melt Value</th>
-                <th className="pb-2 pr-4">Est. Value</th>
-                <th className="pb-2 pr-4">Paid</th>
+                <SortTh col="melt_value">Melt Value</SortTh>
+                <SortTh col="estimated_value">Est. Value</SortTh>
+                <SortTh col="purchase_price">Paid</SortTh>
+                <SortTh col="purchase_date">Date</SortTh>
                 <th className="pb-2">Actions</th>
               </tr>
             </thead>
@@ -304,6 +382,11 @@ export default function Collection() {
                   <td className="py-2 pr-4 text-green-400">{formatCurrency(piece.melt_value)}</td>
                   <td className="py-2 pr-4 text-gray-200">{formatCurrency(piece.estimated_value)}</td>
                   <td className="py-2 pr-4 text-gray-400">{formatCurrency(piece.purchase_price)}</td>
+                  <td className="py-2 pr-4 text-gray-500 text-xs whitespace-nowrap">
+                    {piece.purchase_date
+                      ? new Date(piece.purchase_date + 'T00:00:00').toLocaleDateString()
+                      : new Date(piece.created_at + 'Z').toLocaleDateString()}
+                  </td>
                   <td className="py-2" onClick={e => e.stopPropagation()}>
                     <button onClick={e => handleDelete(e, piece)}
                       className="text-red-600 hover:text-red-400 text-xs px-2 py-1 rounded hover:bg-red-900/20">
