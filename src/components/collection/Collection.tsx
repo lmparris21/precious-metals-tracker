@@ -18,6 +18,7 @@ const METAL_COLORS: Record<string, string> = {
   gold: 'bg-yellow-700 text-yellow-200',
   platinum: 'bg-blue-800 text-blue-200',
   palladium: 'bg-purple-800 text-purple-200',
+  numismatic: 'bg-amber-800 text-amber-200',
 }
 
 const AMW_LABEL: Record<string, string> = {
@@ -25,6 +26,7 @@ const AMW_LABEL: Record<string, string> = {
   gold: 'AGW',
   platinum: 'APW',
   palladium: 'APdW',
+  numismatic: '',
 }
 
 export default function Collection() {
@@ -127,7 +129,7 @@ export default function Collection() {
       escape(p.purchase_price),
       escape(p.purchase_date),
       escape(p.estimated_value),
-      escape(p.melt_value != null ? (p.melt_value * rate).toFixed(2) : undefined),
+      escape(p.metal_type === 'numismatic' ? '' : p.melt_value != null ? (p.melt_value * rate).toFixed(2) : undefined),
       escape(p.notes),
     ].join(','))
 
@@ -197,6 +199,7 @@ export default function Collection() {
           <option value="gold">Gold</option>
           <option value="platinum">Platinum</option>
           <option value="palladium">Palladium</option>
+          <option value="numismatic">Numismatic</option>
         </select>
         <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
           className="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-100">
@@ -290,7 +293,9 @@ export default function Collection() {
                 <div className="grid grid-cols-2 gap-2 text-xs mb-3">
                   <div>
                     <p className="text-gray-500">Melt Value</p>
-                    <p className="text-green-400 font-medium">{formatMoney(piece.melt_value)}</p>
+                    <p className="text-green-400 font-medium">
+                      {piece.metal_type === 'numismatic' ? '—' : formatMoney(piece.melt_value)}
+                    </p>
                   </div>
                   <div>
                     <p className="text-gray-500">Est. Value</p>
@@ -299,10 +304,15 @@ export default function Collection() {
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600 text-xs">
-                    {piece.weight_oz}oz · {(Number(piece.purity) * 100).toFixed(1)}% · {AMW_LABEL[piece.metal_type] ?? 'AMW'} {(piece.weight_oz * Number(piece.purity)).toFixed(4)}oz
-                    {piece.quantity > 1 && <span className="ml-1 text-yellow-500 font-medium">×{piece.quantity} = {(piece.weight_oz * piece.quantity).toFixed(4)}oz total</span>}
-                  </span>
+                  {piece.metal_type !== 'numismatic' && (
+                    <span className="text-gray-600 text-xs">
+                      {piece.weight_oz}oz · {(Number(piece.purity) * 100).toFixed(1)}% · {AMW_LABEL[piece.metal_type] ?? 'AMW'} {(piece.weight_oz! * Number(piece.purity)).toFixed(4)}oz
+                      {piece.quantity > 1 && <span className="ml-1 text-yellow-500 font-medium">×{piece.quantity} = {(piece.weight_oz! * piece.quantity).toFixed(4)}oz total</span>}
+                    </span>
+                  )}
+                  {piece.metal_type === 'numismatic' && (
+                    <span className="text-gray-600 text-xs">Numismatic</span>
+                  )}
                   <button
                     onClick={e => handleDelete(e, piece)}
                     className="text-red-600 hover:text-red-400 text-xs px-2 py-1 rounded hover:bg-red-900/20"
@@ -384,10 +394,18 @@ export default function Collection() {
                   <td className="py-2 pr-4 text-gray-300 capitalize">{piece.piece_type}</td>
                   <td className="py-2 pr-4 text-gray-300">{piece.quantity ?? 1}</td>
                   <td className="py-2 pr-4 text-gray-300">
-                    <div>{piece.weight_oz}oz{piece.quantity > 1 && <span className="text-yellow-600 text-xs ml-1">×{piece.quantity} = {(piece.weight_oz * piece.quantity).toFixed(4)}oz</span>}</div>
-                    <div className="text-gray-500 text-xs">{AMW_LABEL[piece.metal_type] ?? 'AMW'} {(piece.weight_oz * Number(piece.purity)).toFixed(4)}oz</div>
+                    {piece.metal_type === 'numismatic' ? (
+                      <span className="text-gray-600 text-xs">—</span>
+                    ) : (
+                      <>
+                        <div>{piece.weight_oz}oz{piece.quantity > 1 && <span className="text-yellow-600 text-xs ml-1">×{piece.quantity} = {(piece.weight_oz! * piece.quantity).toFixed(4)}oz</span>}</div>
+                        <div className="text-gray-500 text-xs">{AMW_LABEL[piece.metal_type] ?? 'AMW'} {(piece.weight_oz! * Number(piece.purity)).toFixed(4)}oz</div>
+                      </>
+                    )}
                   </td>
-                  <td className="py-2 pr-4 text-green-400">{formatMoney(piece.melt_value)}</td>
+                  <td className="py-2 pr-4 text-green-400">
+                    {piece.metal_type === 'numismatic' ? <span className="text-gray-600">—</span> : formatMoney(piece.melt_value)}
+                  </td>
                   <td className="py-2 pr-4 text-gray-200">{formatUserMoney(piece.estimated_value)}</td>
                   <td className="py-2 pr-4 text-gray-400">{formatUserMoney(piece.purchase_price)}</td>
                   <td className="py-2 pr-4 text-gray-500 text-xs whitespace-nowrap">
