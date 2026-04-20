@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getPieces, deletePiece, getPiece } from '../../api/pieces'
+import { useCurrency } from '../../context/CurrencyContext'
 import type { Piece, Photo } from '../../types/piece'
 import PhotoLightbox from '../pieces/PhotoLightbox'
 
@@ -19,13 +20,9 @@ const METAL_COLORS: Record<string, string> = {
   palladium: 'bg-purple-800 text-purple-200',
 }
 
-function formatCurrency(n: number | undefined) {
-  if (n == null) return '—'
-  return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
-
 export default function Collection() {
   const navigate = useNavigate()
+  const { formatMoney, formatUserMoney, currency, rate } = useCurrency()
   const [pieces, setPieces] = useState<Piece[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
@@ -95,7 +92,8 @@ export default function Collection() {
     const headers = [
       'Name', 'Year', 'Metal', 'Type', 'Weight (oz)', 'Weight Unit', 'Purity',
       'Quantity', 'Graded', 'Grading Service', 'Grade', 'Cert Number',
-      'Purchase Price', 'Purchase Date', 'Estimated Value', 'Melt Value', 'Notes'
+      `Purchase Price (${currency})`, 'Purchase Date', `Estimated Value (${currency})`,
+      `Melt Value (${currency})`, 'Notes'
     ]
 
     const escape = (v: string | number | undefined | null) => {
@@ -122,7 +120,7 @@ export default function Collection() {
       escape(p.purchase_price),
       escape(p.purchase_date),
       escape(p.estimated_value),
-      escape(p.melt_value),
+      escape(p.melt_value != null ? (p.melt_value * rate).toFixed(2) : undefined),
       escape(p.notes),
     ].join(','))
 
@@ -285,11 +283,11 @@ export default function Collection() {
                 <div className="grid grid-cols-2 gap-2 text-xs mb-3">
                   <div>
                     <p className="text-gray-500">Melt Value</p>
-                    <p className="text-green-400 font-medium">{formatCurrency(piece.melt_value)}</p>
+                    <p className="text-green-400 font-medium">{formatMoney(piece.melt_value)}</p>
                   </div>
                   <div>
                     <p className="text-gray-500">Est. Value</p>
-                    <p className="text-gray-200 font-medium">{formatCurrency(piece.estimated_value)}</p>
+                    <p className="text-gray-200 font-medium">{formatUserMoney(piece.estimated_value)}</p>
                   </div>
                 </div>
 
@@ -379,9 +377,9 @@ export default function Collection() {
                   <td className="py-2 pr-4 text-gray-300 capitalize">{piece.piece_type}</td>
                   <td className="py-2 pr-4 text-gray-300">{piece.quantity ?? 1}</td>
                   <td className="py-2 pr-4 text-gray-300">{piece.weight_oz}oz</td>
-                  <td className="py-2 pr-4 text-green-400">{formatCurrency(piece.melt_value)}</td>
-                  <td className="py-2 pr-4 text-gray-200">{formatCurrency(piece.estimated_value)}</td>
-                  <td className="py-2 pr-4 text-gray-400">{formatCurrency(piece.purchase_price)}</td>
+                  <td className="py-2 pr-4 text-green-400">{formatMoney(piece.melt_value)}</td>
+                  <td className="py-2 pr-4 text-gray-200">{formatUserMoney(piece.estimated_value)}</td>
+                  <td className="py-2 pr-4 text-gray-400">{formatUserMoney(piece.purchase_price)}</td>
                   <td className="py-2 pr-4 text-gray-500 text-xs whitespace-nowrap">
                     {piece.purchase_date
                       ? new Date(piece.purchase_date + 'T00:00:00').toLocaleDateString()

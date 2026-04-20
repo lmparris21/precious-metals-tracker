@@ -91,4 +91,15 @@ if (existingCatalog.count === 0) {
   seedCatalog(db)
 }
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
+`)
+const insertSetting = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)')
+insertSetting.run('currency', 'USD')
+insertSetting.run('exchange_rate', '1')
+insertSetting.run('rate_updated_at', '')
+
 export default db

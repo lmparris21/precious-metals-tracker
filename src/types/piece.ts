@@ -64,6 +64,12 @@ export interface Summary {
   by_metal: MetalSummary[]
 }
 
+export interface CurrencySettings {
+  currency: string
+  exchange_rate: number
+  rate_updated_at: string
+}
+
 export interface MetalSummary {
   metal_type: string
   count: number

@@ -1,17 +1,15 @@
 import { useEffect, useState } from 'react'
 import { getSummary } from '../../api/pieces'
 import { getSpotPrices, refreshSpotPrices } from '../../api/spot-prices'
+import { useCurrency } from '../../context/CurrencyContext'
 import type { Summary, SpotPrice } from '../../types/piece'
-
-function formatCurrency(n: number) {
-  return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
 
 function formatOz(n: number) {
   return `${n.toFixed(4).replace(/\.?0+$/, '')} oz`
 }
 
 export default function Dashboard() {
+  const { formatMoney, formatUserMoney } = useCurrency()
   const [summary, setSummary] = useState<Summary | null>(null)
   const [spotPrices, setSpotPrices] = useState<SpotPrice[]>([])
   const [loading, setLoading] = useState(true)
@@ -31,7 +29,6 @@ export default function Dashboard() {
     try {
       const updated = await refreshSpotPrices()
       setSpotPrices(updated)
-      // Reload summary with new prices
       const s = await getSummary()
       setSummary(s)
     } catch (err) {
@@ -54,9 +51,13 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: 'Total Pieces', value: summary.total_pieces.toString() },
-          { label: 'Total Cost', value: formatCurrency(summary.total_purchase_cost) },
-          { label: 'Total Melt Value', value: formatCurrency(summary.total_melt_value), highlight: true },
-          { label: 'Gain / Loss', value: `${gainLossPositive ? '+' : ''}${formatCurrency(summary.gain_loss)}`, positive: gainLossPositive },
+          { label: 'Total Cost', value: formatUserMoney(summary.total_purchase_cost) },
+          { label: 'Total Melt Value', value: formatMoney(summary.total_melt_value), highlight: true },
+          {
+            label: 'Gain / Loss',
+            value: `${gainLossPositive ? '+' : ''}${formatUserMoney(summary.gain_loss)}`,
+            positive: gainLossPositive,
+          },
         ].map(({ label, value, highlight, positive }) => (
           <div key={label} className="bg-gray-900 border border-gray-800 rounded-lg p-4">
             <p className="text-gray-500 text-sm mb-1">{label}</p>
@@ -81,7 +82,7 @@ export default function Dashboard() {
         </div>
         <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
           <p className="text-gray-500 text-sm mb-1">Est. Value</p>
-          <p className="text-xl font-bold text-gray-100">{formatCurrency(summary.total_estimated_value)}</p>
+          <p className="text-xl font-bold text-gray-100">{formatUserMoney(summary.total_estimated_value)}</p>
         </div>
       </div>
 
@@ -112,10 +113,10 @@ export default function Dashboard() {
                     <td className="px-6 py-3 text-gray-300">{m.count}</td>
                     <td className="px-6 py-3 text-gray-300">{formatOz(m.total_weight_oz)}</td>
                     <td className="px-6 py-3 text-gray-300">{formatOz(m.total_pure_oz)}</td>
-                    <td className="px-6 py-3 text-gray-400">{formatCurrency(m.spot_price)}/oz</td>
-                    <td className="px-6 py-3 text-yellow-400 font-medium">{formatCurrency(m.total_melt_value)}</td>
-                    <td className="px-6 py-3 text-gray-400">{formatCurrency(m.total_purchase_cost)}</td>
-                    <td className="px-6 py-3 text-gray-200">{formatCurrency(m.total_estimated_value)}</td>
+                    <td className="px-6 py-3 text-gray-400">{formatMoney(m.spot_price)}/oz</td>
+                    <td className="px-6 py-3 text-yellow-400 font-medium">{formatMoney(m.total_melt_value)}</td>
+                    <td className="px-6 py-3 text-gray-400">{formatUserMoney(m.total_purchase_cost)}</td>
+                    <td className="px-6 py-3 text-gray-200">{formatUserMoney(m.total_estimated_value)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -143,7 +144,7 @@ export default function Dashboard() {
           {spotPrices.map(sp => (
             <div key={sp.metal_type} className="bg-gray-800 rounded p-3">
               <p className="text-gray-500 text-xs capitalize mb-1">{sp.metal_type}</p>
-              <p className="text-gray-100 font-semibold">{formatCurrency(sp.price_per_oz)}/oz</p>
+              <p className="text-gray-100 font-semibold">{formatMoney(sp.price_per_oz)}/oz</p>
               <p className="text-gray-600 text-xs mt-1">
                 {sp.source === 'api' ? '🌐 API' : '✏️ Manual'} ·{' '}
                 {new Date(sp.updated_at).toLocaleDateString()}

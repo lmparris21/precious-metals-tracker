@@ -6,6 +6,7 @@ import cors from 'cors'
 import pieceRoutes from './routes/pieces.js'
 import catalogRoutes from './routes/catalog.js'
 import spotPriceRoutes from './routes/spot-prices.js'
+import settingsRoutes from './routes/settings.js'
 import './db.js' // ensure DB is initialized
 
 const app = express()
@@ -17,6 +18,7 @@ app.use(express.json())
 app.use(pieceRoutes)
 app.use(catalogRoutes)
 app.use(spotPriceRoutes)
+app.use(settingsRoutes)
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' })

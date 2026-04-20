@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
+import { CurrencyProvider } from './context/CurrencyContext'
 import Layout from './components/Layout'
 import Dashboard from './components/dashboard/Dashboard'
 import Collection from './components/collection/Collection'
@@ -12,17 +13,19 @@ function PieceFormRoute() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/collection" element={<Collection />} />
-          <Route path="/pieces/new" element={<PieceFormRoute />} />
-          <Route path="/pieces/:id/edit" element={<PieceFormRoute />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <CurrencyProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/collection" element={<Collection />} />
+            <Route path="/pieces/new" element={<PieceFormRoute />} />
+            <Route path="/pieces/:id/edit" element={<PieceFormRoute />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </CurrencyProvider>
   )
 }
