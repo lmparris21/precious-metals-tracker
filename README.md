@@ -12,6 +12,7 @@ A local web app for tracking your silver and gold collection — coins, bars, an
 - **Photos** — drag-and-drop upload, side-by-side display in grid/table, full-screen lightbox with keyboard navigation (← → Esc)
 - **CSV export** — export your current filtered view as a spreadsheet from the Collection page
 - **Spot prices** — manual override or on-demand fetch from [metals.dev](https://metals.dev) API
+- **Multi-currency** — display in USD, GBP, EUR, and 12 more currencies; exchange rates auto-fetched from [open.er-api.com](https://open.er-api.com) (free, no API key needed) with manual fallback
 - **Melt value** — computed live: `weight × purity × spot price × quantity`
 
 ## Tech Stack
@@ -53,6 +54,10 @@ METALS_DEV_API_KEY=your_key_here
 ```
 
 Then use the **Refresh from API** button on the Dashboard or Settings page.
+
+### 4. Optional: set your currency
+
+Go to **Settings → Currency**, pick your currency (GBP, EUR, etc.), and click **Auto** to fetch the live exchange rate — no API key required. You can also enter a rate manually.
 
 ## Data Storage
 
