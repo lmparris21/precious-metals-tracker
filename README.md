@@ -7,8 +7,9 @@ A local web app for tracking your silver and gold collection — coins, bars, an
 ## Features
 
 - **Dashboard** — total pieces, melt value, gain/loss, breakdown by metal type, spot prices with manual refresh
-- **Collection** — grid and table views, filter by metal/type/graded, text search, clickable column sort with direction toggle
+- **Collection** — grid and table views, filter by metal/type/graded, text search, clickable column sort with direction toggle (metal, type, qty, weight, melt value, est. value, paid, date)
 - **Add/Edit pieces** — searchable catalog auto-fills specs (74 built-in coins, bars, and rounds), conditional grading fields (PCGS, NGC, etc.), quantity support
+- **Numismatic pieces** — track rare/collectible coins (e.g. key-date pennies) by rarity value; weight, purity, and melt value fields are hidden for numismatic pieces; displayed with an amber badge in the collection
 - **Photos** — drag-and-drop upload, side-by-side display in grid/table, full-screen lightbox with keyboard navigation (← → Esc)
 - **CSV export** — export your current filtered view as a spreadsheet from the Collection page
 - **Spot prices** — manual override or on-demand fetch from [metals.dev](https://metals.dev) API
