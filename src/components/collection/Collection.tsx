@@ -20,6 +20,13 @@ const METAL_COLORS: Record<string, string> = {
   palladium: 'bg-purple-800 text-purple-200',
 }
 
+const AMW_LABEL: Record<string, string> = {
+  silver: 'ASW',
+  gold: 'AGW',
+  platinum: 'APW',
+  palladium: 'APdW',
+}
+
 export default function Collection() {
   const navigate = useNavigate()
   const { formatMoney, formatUserMoney, currency, rate } = useCurrency()
@@ -293,8 +300,8 @@ export default function Collection() {
 
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 text-xs">
-                    {piece.weight_oz}oz · {(Number(piece.purity) * 100).toFixed(1)}%
-                    {piece.quantity > 1 && <span className="ml-1 text-yellow-500 font-medium">×{piece.quantity}</span>}
+                    {piece.weight_oz}oz · {(Number(piece.purity) * 100).toFixed(1)}% · {AMW_LABEL[piece.metal_type] ?? 'AMW'} {(piece.weight_oz * Number(piece.purity)).toFixed(4)}oz
+                    {piece.quantity > 1 && <span className="ml-1 text-yellow-500 font-medium">×{piece.quantity} = {(piece.weight_oz * piece.quantity).toFixed(4)}oz total</span>}
                   </span>
                   <button
                     onClick={e => handleDelete(e, piece)}
@@ -376,7 +383,10 @@ export default function Collection() {
                   </td>
                   <td className="py-2 pr-4 text-gray-300 capitalize">{piece.piece_type}</td>
                   <td className="py-2 pr-4 text-gray-300">{piece.quantity ?? 1}</td>
-                  <td className="py-2 pr-4 text-gray-300">{piece.weight_oz}oz</td>
+                  <td className="py-2 pr-4 text-gray-300">
+                    <div>{piece.weight_oz}oz{piece.quantity > 1 && <span className="text-yellow-600 text-xs ml-1">×{piece.quantity} = {(piece.weight_oz * piece.quantity).toFixed(4)}oz</span>}</div>
+                    <div className="text-gray-500 text-xs">{AMW_LABEL[piece.metal_type] ?? 'AMW'} {(piece.weight_oz * Number(piece.purity)).toFixed(4)}oz</div>
+                  </td>
                   <td className="py-2 pr-4 text-green-400">{formatMoney(piece.melt_value)}</td>
                   <td className="py-2 pr-4 text-gray-200">{formatUserMoney(piece.estimated_value)}</td>
                   <td className="py-2 pr-4 text-gray-400">{formatUserMoney(piece.purchase_price)}</td>

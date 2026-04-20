@@ -75,6 +75,41 @@ if (!cols.some(c => c.name === 'quantity')) {
   db.exec("ALTER TABLE pieces ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1")
 }
 
+// Migrate: fix catalog and piece weights from ASW to gross (purity was double-counted in melt formula)
+const morgRec = db.prepare("SELECT weight_oz FROM catalog_items WHERE name = 'Morgan Dollar'").get() as { weight_oz: number } | undefined
+if (morgRec && morgRec.weight_oz === 0.7735) {
+  const weightFixes = [
+    { name: 'Morgan Dollar',                          oldW: 0.7735, newW: 0.8594 },
+    { name: 'Peace Dollar',                           oldW: 0.7735, newW: 0.8594 },
+    { name: 'Walking Liberty Half Dollar',            oldW: 0.3618, newW: 0.4019 },
+    { name: 'Franklin Half Dollar',                   oldW: 0.3618, newW: 0.4019 },
+    { name: 'Washington Quarter',                     oldW: 0.1808, newW: 0.2009 },
+    { name: 'America the Beautiful Quarter (Silver)', oldW: 0.1808, newW: 0.2009 },
+    { name: 'Mercury Dime',                           oldW: 0.0723, newW: 0.0804 },
+    { name: 'Roosevelt Dime (Silver)',                oldW: 0.0723, newW: 0.0804 },
+    { name: 'American Gold Eagle 1oz',                oldW: 1.0,    newW: 1.0909 },
+    { name: 'American Gold Eagle 1/2oz',              oldW: 0.5,    newW: 0.5455 },
+    { name: 'American Gold Eagle 1/4oz',              oldW: 0.25,   newW: 0.2727 },
+    { name: 'American Gold Eagle 1/10oz',             oldW: 0.1,    newW: 0.1091 },
+    { name: 'Krugerrand 1oz',                         oldW: 1.0,    newW: 1.0909 },
+    { name: 'Krugerrand 1/2oz',                       oldW: 0.5,    newW: 0.5455 },
+    { name: 'Krugerrand 1/4oz',                       oldW: 0.25,   newW: 0.2727 },
+    { name: 'Krugerrand 1/10oz',                      oldW: 0.1,    newW: 0.1091 },
+    { name: 'Sovereign',                              oldW: 0.2354, newW: 0.2568 },
+    { name: 'Half Sovereign',                         oldW: 0.1177, newW: 0.1284 },
+    { name: 'Saint-Gaudens Double Eagle',             oldW: 0.9675, newW: 1.0750 },
+    { name: 'Liberty Head Double Eagle',              oldW: 0.9675, newW: 1.0750 },
+  ]
+  const updCatalog = db.prepare('UPDATE catalog_items SET weight_oz = ? WHERE name = ? AND weight_oz = ?')
+  const updPiece   = db.prepare('UPDATE pieces SET weight_oz = ? WHERE name = ? AND weight_oz = ?')
+  db.transaction(() => {
+    for (const fix of weightFixes) {
+      updCatalog.run(fix.newW, fix.name, fix.oldW)
+      updPiece.run(fix.newW, fix.name, fix.oldW)
+    }
+  })()
+}
+
 // Seed spot prices if not present
 const existingSpotPrices = db.prepare('SELECT COUNT(*) as count FROM spot_prices').get() as { count: number }
 if (existingSpotPrices.count === 0) {

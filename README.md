@@ -13,7 +13,9 @@ A local web app for tracking your silver and gold collection — coins, bars, an
 - **CSV export** — export your current filtered view as a spreadsheet from the Collection page
 - **Spot prices** — manual override or on-demand fetch from [metals.dev](https://metals.dev) API
 - **Multi-currency** — display in USD, GBP, EUR, and 12 more currencies; exchange rates auto-fetched from [open.er-api.com](https://open.er-api.com) (free, no API key needed) with manual fallback
-- **Melt value** — computed live: `weight × purity × spot price × quantity`
+- **Melt value** — computed live: `gross weight × purity × spot price × quantity`
+- **Actual metal weight** — ASW/AGW/APW/APdW displayed on piece details and collection cards/table; total weight shown when quantity > 1
+- **Accurate catalog weights** — catalog stores gross coin weights (not ASW), so the melt formula applies purity exactly once; existing databases are auto-migrated on first launch
 
 ## Tech Stack
 

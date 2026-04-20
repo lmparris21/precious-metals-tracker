@@ -24,6 +24,13 @@ interface FormState {
   notes: string
 }
 
+const AMW_LABEL: Record<string, string> = {
+  silver: 'ASW',
+  gold: 'AGW',
+  platinum: 'APW',
+  palladium: 'APdW',
+}
+
 const DEFAULT_FORM: FormState = {
   name: '',
   year: '',
@@ -223,6 +230,14 @@ export default function PieceForm() {
                 onChange={e => set('purity', e.target.value)} placeholder="0.999" className={inputCls} />
             </div>
           </div>
+          {form.weight_unit === 'oz' && Number(form.weight_oz) > 0 && Number(form.purity) > 0 && (
+            <p className="text-xs text-gray-500">
+              {AMW_LABEL[form.metal_type] ?? 'AMW'}: <span className="text-gray-400 font-medium">{(Number(form.weight_oz) * Number(form.purity)).toFixed(4)} troy oz</span>
+              {Number(form.quantity) > 1 && (
+                <span className="ml-3">Total weight: <span className="text-gray-400 font-medium">{(Number(form.weight_oz) * Number(form.quantity)).toFixed(4)} troy oz</span> <span className="text-yellow-600">×{form.quantity}</span></span>
+              )}
+            </p>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
