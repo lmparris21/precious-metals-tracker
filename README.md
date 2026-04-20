@@ -83,7 +83,8 @@ precious-metals-tracker/
 │   ├── routes/
 │   │   ├── pieces.ts         # CRUD, photos, summary
 │   │   ├── spot-prices.ts    # Spot price management
-│   │   └── catalog.ts        # Catalog search
+│   │   ├── catalog.ts        # Catalog search
+│   │   └── settings.ts       # Currency + exchange rate settings
 │   ├── services/
 │   │   └── spot-price-api.ts # metals.dev API integration
 │   ├── seed/
@@ -91,11 +92,13 @@ precious-metals-tracker/
 │   └── middleware/upload.ts  # Multer photo upload config
 ├── src/
 │   ├── api/                  # Fetch wrappers for all endpoints
+│   ├── context/
+│   │   └── CurrencyContext.tsx  # Currency + exchange rate context provider
 │   ├── components/
 │   │   ├── collection/       # Collection page with grid/table/filters
 │   │   ├── dashboard/        # Dashboard with stats and spot prices
 │   │   ├── pieces/           # PieceForm, CatalogSearch, PhotoUpload, PhotoLightbox
-│   │   └── settings/         # Spot price management page
+│   │   └── settings/         # Spot prices + currency management
 │   ├── types/piece.ts        # TypeScript interfaces
 │   └── App.tsx               # Routes
 ├── data/                     # Gitignored — DB and photos live here
