@@ -38,6 +38,10 @@ router.get('/api/pieces', (req, res) => {
 
   const allowedSorts: Record<string, string> = {
     name: 'p.name',
+    metal_type: 'p.metal_type',
+    piece_type: 'p.piece_type',
+    quantity: 'p.quantity',
+    weight_oz: 'p.weight_oz',
     purchase_date: 'p.purchase_date',
     purchase_price: 'p.purchase_price',
     melt_value: 'melt_value',

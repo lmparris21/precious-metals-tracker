@@ -219,6 +219,10 @@ export default function Collection() {
           className="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-100">
           <option value="created_at">Date Added</option>
           <option value="name">Name</option>
+          <option value="metal_type">Metal</option>
+          <option value="piece_type">Type</option>
+          <option value="quantity">Qty</option>
+          <option value="weight_oz">Weight</option>
           <option value="melt_value">Melt Value</option>
           <option value="purchase_price">Purchase Price</option>
           <option value="estimated_value">Est. Value</option>
@@ -330,10 +334,10 @@ export default function Collection() {
               <tr className="border-b border-gray-800 text-gray-400 text-left">
                 <th className="pb-2 pr-4 w-20">Photos</th>
                 <SortTh col="name">Name</SortTh>
-                <th className="pb-2 pr-4">Metal</th>
-                <th className="pb-2 pr-4">Type</th>
-                <th className="pb-2 pr-4">Qty</th>
-                <th className="pb-2 pr-4">Weight</th>
+                <SortTh col="metal_type">Metal</SortTh>
+                <SortTh col="piece_type">Type</SortTh>
+                <SortTh col="quantity">Qty</SortTh>
+                <SortTh col="weight_oz">Weight</SortTh>
                 <SortTh col="melt_value">Melt Value</SortTh>
                 <SortTh col="estimated_value">Est. Value</SortTh>
                 <SortTh col="purchase_price">Paid</SortTh>
