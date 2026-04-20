@@ -20,13 +20,13 @@ db.pragma('foreign_keys = ON')
 db.exec(`
   CREATE TABLE IF NOT EXISTS pieces (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    metal_type TEXT NOT NULL CHECK(metal_type IN ('silver', 'gold', 'platinum', 'palladium')),
+    metal_type TEXT NOT NULL CHECK(metal_type IN ('silver', 'gold', 'platinum', 'palladium', 'numismatic')),
     piece_type TEXT NOT NULL CHECK(piece_type IN ('coin', 'bar', 'round', 'other')),
     name TEXT NOT NULL,
     year INTEGER,
-    weight_oz REAL NOT NULL,
+    weight_oz REAL,
     weight_unit TEXT NOT NULL DEFAULT 'oz' CHECK(weight_unit IN ('oz', 'g', 'kg')),
-    purity REAL NOT NULL,
+    purity REAL,
     is_graded INTEGER NOT NULL DEFAULT 0,
     grading_service TEXT,
     grade TEXT,
@@ -69,10 +69,50 @@ db.exec(`
   );
 `)
 
-// Migrate: add quantity column if it doesn't exist (for existing DBs)
-const cols = db.prepare("PRAGMA table_info(pieces)").all() as { name: string }[]
-if (!cols.some(c => c.name === 'quantity')) {
+// Migrate: add quantity column and check weight_oz nullability (single PRAGMA query)
+const colInfo = db.prepare("PRAGMA table_info(pieces)").all() as { name: string, notnull: number }[]
+if (!colInfo.some(c => c.name === 'quantity')) {
   db.exec("ALTER TABLE pieces ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1")
+}
+
+// Migrate: support numismatic pieces (nullable weight_oz/purity, expanded metal_type CHECK)
+const weightOzCol = colInfo.find(c => c.name === 'weight_oz')
+if (weightOzCol && weightOzCol.notnull === 1) {
+  db.pragma('foreign_keys = OFF')
+  try {
+    db.transaction(() => {
+      db.exec(`
+        DROP TABLE IF EXISTS pieces_new;
+        CREATE TABLE pieces_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          metal_type TEXT NOT NULL CHECK(metal_type IN ('silver', 'gold', 'platinum', 'palladium', 'numismatic')),
+          piece_type TEXT NOT NULL CHECK(piece_type IN ('coin', 'bar', 'round', 'other')),
+          name TEXT NOT NULL,
+          year INTEGER,
+          weight_oz REAL,
+          weight_unit TEXT NOT NULL DEFAULT 'oz' CHECK(weight_unit IN ('oz', 'g', 'kg')),
+          purity REAL,
+          is_graded INTEGER NOT NULL DEFAULT 0,
+          grading_service TEXT,
+          grade TEXT,
+          cert_number TEXT,
+          purchase_price REAL,
+          purchase_date TEXT,
+          estimated_value REAL,
+          quantity INTEGER NOT NULL DEFAULT 1,
+          notes TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        INSERT INTO pieces_new (id, metal_type, piece_type, name, year, weight_oz, weight_unit, purity, is_graded, grading_service, grade, cert_number, purchase_price, purchase_date, estimated_value, quantity, notes, created_at, updated_at)
+          SELECT id, metal_type, piece_type, name, year, weight_oz, weight_unit, purity, is_graded, grading_service, grade, cert_number, purchase_price, purchase_date, estimated_value, quantity, notes, created_at, updated_at FROM pieces;
+        DROP TABLE pieces;
+        ALTER TABLE pieces_new RENAME TO pieces;
+      `)
+    })()
+  } finally {
+    db.pragma('foreign_keys = ON')
+  }
 }
 
 // Migrate: fix catalog and piece weights from ASW to gross (purity was double-counted in melt formula)

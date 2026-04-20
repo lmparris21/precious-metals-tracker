@@ -1,12 +1,12 @@
 export interface Piece {
   id: number
-  metal_type: 'silver' | 'gold' | 'platinum' | 'palladium'
+  metal_type: 'silver' | 'gold' | 'platinum' | 'palladium' | 'numismatic'
   piece_type: 'coin' | 'bar' | 'round' | 'other'
   name: string
   year?: number
-  weight_oz: number
+  weight_oz: number | null
   weight_unit: 'oz' | 'g' | 'kg'
-  purity: number
+  purity: number | null
   quantity: number
   is_graded: boolean
   grading_service?: string

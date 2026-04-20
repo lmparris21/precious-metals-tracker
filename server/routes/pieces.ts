@@ -38,6 +38,10 @@ router.get('/api/pieces', (req, res) => {
 
   const allowedSorts: Record<string, string> = {
     name: 'p.name',
+    metal_type: 'p.metal_type',
+    piece_type: 'p.piece_type',
+    quantity: 'p.quantity',
+    weight_oz: 'p.weight_oz',
     purchase_date: 'p.purchase_date',
     purchase_price: 'p.purchase_price',
     melt_value: 'melt_value',
@@ -98,8 +102,9 @@ router.post('/api/pieces', (req, res) => {
     purchase_price, purchase_date, estimated_value, quantity, notes
   } = req.body
 
-  if (!metal_type || !piece_type || !name || weight_oz == null || purity == null) {
-    res.status(400).json({ error: 'metal_type, piece_type, name, weight_oz, and purity are required' })
+  const needsWeightPurity = metal_type !== 'numismatic'
+  if (!metal_type || !piece_type || !name || (needsWeightPurity && (weight_oz == null || purity == null))) {
+    res.status(400).json({ error: 'metal_type, piece_type, and name are required; weight_oz and purity are required for non-numismatic pieces' })
     return
   }
 
@@ -110,8 +115,8 @@ router.post('/api/pieces', (req, res) => {
       purchase_price, purchase_date, estimated_value, quantity, notes
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
-    metal_type, piece_type, name, year ?? null, weight_oz, weight_unit ?? 'oz',
-    purity, is_graded ? 1 : 0, grading_service ?? null, grade ?? null, cert_number ?? null,
+    metal_type, piece_type, name, year ?? null, weight_oz ?? null, weight_unit ?? 'oz',
+    purity ?? null, is_graded ? 1 : 0, grading_service ?? null, grade ?? null, cert_number ?? null,
     purchase_price ?? null, purchase_date ?? null, estimated_value ?? null, quantity ?? 1, notes ?? null
   )
 
@@ -142,8 +147,9 @@ router.put('/api/pieces/:id', (req, res) => {
     return
   }
 
-  if (!metal_type || !piece_type || !name || weight_oz == null || purity == null) {
-    res.status(400).json({ error: 'metal_type, piece_type, name, weight_oz, and purity are required' })
+  const needsWeightPurity = metal_type !== 'numismatic'
+  if (!metal_type || !piece_type || !name || (needsWeightPurity && (weight_oz == null || purity == null))) {
+    res.status(400).json({ error: 'metal_type, piece_type, and name are required; weight_oz and purity are required for non-numismatic pieces' })
     return
   }
 
@@ -155,8 +161,8 @@ router.put('/api/pieces/:id', (req, res) => {
       updated_at = datetime('now')
     WHERE id = ?
   `).run(
-    metal_type, piece_type, name, year ?? null, weight_oz, weight_unit ?? 'oz',
-    purity, is_graded ? 1 : 0, grading_service ?? null, grade ?? null, cert_number ?? null,
+    metal_type, piece_type, name, year ?? null, weight_oz ?? null, weight_unit ?? 'oz',
+    purity ?? null, is_graded ? 1 : 0, grading_service ?? null, grade ?? null, cert_number ?? null,
     purchase_price ?? null, purchase_date ?? null, estimated_value ?? null, quantity ?? 1, notes ?? null,
     id
   )

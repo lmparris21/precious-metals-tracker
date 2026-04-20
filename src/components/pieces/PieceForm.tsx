@@ -69,9 +69,9 @@ export default function PieceForm() {
         year: piece.year?.toString() ?? '',
         metal_type: piece.metal_type,
         piece_type: piece.piece_type,
-        weight_oz: piece.weight_oz.toString(),
+        weight_oz: piece.weight_oz?.toString() ?? '',
         weight_unit: piece.weight_unit,
-        purity: piece.purity.toString(),
+        purity: piece.purity?.toString() ?? '',
         quantity: piece.quantity?.toString() ?? '1',
         is_graded: Boolean(piece.is_graded),
         grading_service: piece.grading_service ?? '',
@@ -110,9 +110,9 @@ export default function PieceForm() {
       year: form.year ? Number(form.year) : undefined,
       metal_type: form.metal_type as Piece['metal_type'],
       piece_type: form.piece_type as Piece['piece_type'],
-      weight_oz: Number(form.weight_oz),
+      weight_oz: form.metal_type === 'numismatic' ? null : Number(form.weight_oz),
       weight_unit: form.weight_unit as Piece['weight_unit'],
-      purity: Number(form.purity),
+      purity: form.metal_type === 'numismatic' ? null : Number(form.purity),
       quantity: Number(form.quantity) || 1,
       is_graded: form.is_graded,
       grading_service: form.is_graded ? form.grading_service || undefined : undefined,
@@ -193,6 +193,7 @@ export default function PieceForm() {
             <div>
               <label className={labelCls}>Metal *</label>
               <select value={form.metal_type} onChange={e => set('metal_type', e.target.value)} className={inputCls}>
+                <option value="numismatic">Numismatic</option>
                 <option value="silver">Silver</option>
                 <option value="gold">Gold</option>
                 <option value="platinum">Platinum</option>
@@ -210,6 +211,7 @@ export default function PieceForm() {
             </div>
           </div>
 
+          {form.metal_type !== 'numismatic' && (
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className={labelCls}>Weight *</label>
@@ -230,7 +232,8 @@ export default function PieceForm() {
                 onChange={e => set('purity', e.target.value)} placeholder="0.999" className={inputCls} />
             </div>
           </div>
-          {form.weight_unit === 'oz' && Number(form.weight_oz) > 0 && Number(form.purity) > 0 && (
+          )}
+          {form.metal_type !== 'numismatic' && form.weight_unit === 'oz' && Number(form.weight_oz) > 0 && Number(form.purity) > 0 && (
             <p className="text-xs text-gray-500">
               {AMW_LABEL[form.metal_type] ?? 'AMW'}: <span className="text-gray-400 font-medium">{(Number(form.weight_oz) * Number(form.purity)).toFixed(4)} troy oz</span>
               {Number(form.quantity) > 1 && (
