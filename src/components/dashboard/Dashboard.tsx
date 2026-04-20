@@ -111,10 +111,18 @@ export default function Dashboard() {
                   <tr key={m.metal_type} className="border-b border-gray-800/50">
                     <td className="px-6 py-3 font-medium text-gray-100 capitalize">{m.metal_type}</td>
                     <td className="px-6 py-3 text-gray-300">{m.count}</td>
-                    <td className="px-6 py-3 text-gray-300">{formatOz(m.total_weight_oz)}</td>
-                    <td className="px-6 py-3 text-gray-300">{formatOz(m.total_pure_oz)}</td>
-                    <td className="px-6 py-3 text-gray-400">{formatMoney(m.spot_price)}/oz</td>
-                    <td className="px-6 py-3 text-yellow-400 font-medium">{formatMoney(m.total_melt_value)}</td>
+                    <td className="px-6 py-3 text-gray-300">
+                      {m.metal_type === 'numismatic' ? <span className="text-gray-600">—</span> : formatOz(m.total_weight_oz)}
+                    </td>
+                    <td className="px-6 py-3 text-gray-300">
+                      {m.metal_type === 'numismatic' ? <span className="text-gray-600">—</span> : formatOz(m.total_pure_oz)}
+                    </td>
+                    <td className="px-6 py-3 text-gray-400">
+                      {m.metal_type === 'numismatic' ? <span className="text-gray-600">—</span> : `${formatMoney(m.spot_price)}/oz`}
+                    </td>
+                    <td className="px-6 py-3 text-yellow-400 font-medium">
+                      {m.metal_type === 'numismatic' ? <span className="text-gray-600">—</span> : formatMoney(m.total_melt_value)}
+                    </td>
                     <td className="px-6 py-3 text-gray-400">{formatUserMoney(m.total_purchase_cost)}</td>
                     <td className="px-6 py-3 text-gray-200">{formatUserMoney(m.total_estimated_value)}</td>
                   </tr>
