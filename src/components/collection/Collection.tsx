@@ -304,13 +304,12 @@ export default function Collection() {
                 </div>
 
                 <div className="flex justify-between items-center">
-                  {piece.metal_type !== 'numismatic' && (
+                  {piece.metal_type !== 'numismatic' ? (
                     <span className="text-gray-600 text-xs">
                       {piece.weight_oz}oz · {(Number(piece.purity) * 100).toFixed(1)}% · {AMW_LABEL[piece.metal_type] ?? 'AMW'} {(piece.weight_oz! * Number(piece.purity)).toFixed(4)}oz
                       {piece.quantity > 1 && <span className="ml-1 text-yellow-500 font-medium">×{piece.quantity} = {(piece.weight_oz! * piece.quantity).toFixed(4)}oz total</span>}
                     </span>
-                  )}
-                  {piece.metal_type === 'numismatic' && (
+                  ) : (
                     <span className="text-gray-600 text-xs">Numismatic</span>
                   )}
                   <button

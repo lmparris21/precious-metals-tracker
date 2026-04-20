@@ -20,13 +20,13 @@ db.pragma('foreign_keys = ON')
 db.exec(`
   CREATE TABLE IF NOT EXISTS pieces (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    metal_type TEXT NOT NULL CHECK(metal_type IN ('silver', 'gold', 'platinum', 'palladium')),
+    metal_type TEXT NOT NULL CHECK(metal_type IN ('silver', 'gold', 'platinum', 'palladium', 'numismatic')),
     piece_type TEXT NOT NULL CHECK(piece_type IN ('coin', 'bar', 'round', 'other')),
     name TEXT NOT NULL,
     year INTEGER,
-    weight_oz REAL NOT NULL,
+    weight_oz REAL,
     weight_unit TEXT NOT NULL DEFAULT 'oz' CHECK(weight_unit IN ('oz', 'g', 'kg')),
-    purity REAL NOT NULL,
+    purity REAL,
     is_graded INTEGER NOT NULL DEFAULT 0,
     grading_service TEXT,
     grade TEXT,

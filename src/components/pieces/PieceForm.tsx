@@ -233,7 +233,7 @@ export default function PieceForm() {
             </div>
           </div>
           )}
-          {form.weight_unit === 'oz' && Number(form.weight_oz) > 0 && Number(form.purity) > 0 && (
+          {form.metal_type !== 'numismatic' && form.weight_unit === 'oz' && Number(form.weight_oz) > 0 && Number(form.purity) > 0 && (
             <p className="text-xs text-gray-500">
               {AMW_LABEL[form.metal_type] ?? 'AMW'}: <span className="text-gray-400 font-medium">{(Number(form.weight_oz) * Number(form.purity)).toFixed(4)} troy oz</span>
               {Number(form.quantity) > 1 && (

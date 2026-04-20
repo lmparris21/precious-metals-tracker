@@ -111,8 +111,8 @@ router.post('/api/pieces', (req, res) => {
       purchase_price, purchase_date, estimated_value, quantity, notes
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
-    metal_type, piece_type, name, year ?? null, weight_oz, weight_unit ?? 'oz',
-    purity, is_graded ? 1 : 0, grading_service ?? null, grade ?? null, cert_number ?? null,
+    metal_type, piece_type, name, year ?? null, weight_oz ?? null, weight_unit ?? 'oz',
+    purity ?? null, is_graded ? 1 : 0, grading_service ?? null, grade ?? null, cert_number ?? null,
     purchase_price ?? null, purchase_date ?? null, estimated_value ?? null, quantity ?? 1, notes ?? null
   )
 
@@ -157,8 +157,8 @@ router.put('/api/pieces/:id', (req, res) => {
       updated_at = datetime('now')
     WHERE id = ?
   `).run(
-    metal_type, piece_type, name, year ?? null, weight_oz, weight_unit ?? 'oz',
-    purity, is_graded ? 1 : 0, grading_service ?? null, grade ?? null, cert_number ?? null,
+    metal_type, piece_type, name, year ?? null, weight_oz ?? null, weight_unit ?? 'oz',
+    purity ?? null, is_graded ? 1 : 0, grading_service ?? null, grade ?? null, cert_number ?? null,
     purchase_price ?? null, purchase_date ?? null, estimated_value ?? null, quantity ?? 1, notes ?? null,
     id
   )
