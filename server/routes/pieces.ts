@@ -98,8 +98,9 @@ router.post('/api/pieces', (req, res) => {
     purchase_price, purchase_date, estimated_value, quantity, notes
   } = req.body
 
-  if (!metal_type || !piece_type || !name || weight_oz == null || purity == null) {
-    res.status(400).json({ error: 'metal_type, piece_type, name, weight_oz, and purity are required' })
+  const needsWeightPurity = metal_type !== 'numismatic'
+  if (!metal_type || !piece_type || !name || (needsWeightPurity && (weight_oz == null || purity == null))) {
+    res.status(400).json({ error: 'metal_type, piece_type, and name are required; weight_oz and purity are required for non-numismatic pieces' })
     return
   }
 
@@ -142,8 +143,9 @@ router.put('/api/pieces/:id', (req, res) => {
     return
   }
 
-  if (!metal_type || !piece_type || !name || weight_oz == null || purity == null) {
-    res.status(400).json({ error: 'metal_type, piece_type, name, weight_oz, and purity are required' })
+  const needsWeightPurity = metal_type !== 'numismatic'
+  if (!metal_type || !piece_type || !name || (needsWeightPurity && (weight_oz == null || purity == null))) {
+    res.status(400).json({ error: 'metal_type, piece_type, and name are required; weight_oz and purity are required for non-numismatic pieces' })
     return
   }
 
