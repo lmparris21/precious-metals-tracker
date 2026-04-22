@@ -31,6 +31,20 @@ const AMW_LABEL: Record<string, string> = {
   palladium: 'APdW',
 }
 
+const TROY_OZ_PER_GRAM = 31.1034768
+
+function toTroyOz(value: number, unit: string): number {
+  if (unit === 'g') return value / TROY_OZ_PER_GRAM
+  if (unit === 'kg') return (value * 1000) / TROY_OZ_PER_GRAM
+  return value
+}
+
+function fromTroyOz(valueOz: number, unit: string): number {
+  if (unit === 'g') return valueOz * TROY_OZ_PER_GRAM
+  if (unit === 'kg') return (valueOz * TROY_OZ_PER_GRAM) / 1000
+  return valueOz
+}
+
 const DEFAULT_FORM: FormState = {
   name: '',
   year: '',
@@ -69,7 +83,7 @@ export default function PieceForm() {
         year: piece.year?.toString() ?? '',
         metal_type: piece.metal_type,
         piece_type: piece.piece_type,
-        weight_oz: piece.weight_oz?.toString() ?? '',
+        weight_oz: piece.weight_oz != null ? fromTroyOz(piece.weight_oz, piece.weight_unit).toString() : '',
         weight_unit: piece.weight_unit,
         purity: piece.purity?.toString() ?? '',
         quantity: piece.quantity?.toString() ?? '1',
@@ -110,7 +124,7 @@ export default function PieceForm() {
       year: form.year ? Number(form.year) : undefined,
       metal_type: form.metal_type as Piece['metal_type'],
       piece_type: form.piece_type as Piece['piece_type'],
-      weight_oz: form.metal_type === 'numismatic' ? null : Number(form.weight_oz),
+      weight_oz: form.metal_type === 'numismatic' ? null : toTroyOz(Number(form.weight_oz), form.weight_unit),
       weight_unit: form.weight_unit as Piece['weight_unit'],
       purity: form.metal_type === 'numismatic' ? null : Number(form.purity),
       quantity: Number(form.quantity) || 1,
@@ -233,11 +247,11 @@ export default function PieceForm() {
             </div>
           </div>
           )}
-          {form.metal_type !== 'numismatic' && form.weight_unit === 'oz' && Number(form.weight_oz) > 0 && Number(form.purity) > 0 && (
+          {form.metal_type !== 'numismatic' && Number(form.weight_oz) > 0 && Number(form.purity) > 0 && (
             <p className="text-xs text-gray-500">
-              {AMW_LABEL[form.metal_type] ?? 'AMW'}: <span className="text-gray-400 font-medium">{(Number(form.weight_oz) * Number(form.purity)).toFixed(4)} troy oz</span>
+              {AMW_LABEL[form.metal_type] ?? 'AMW'}: <span className="text-gray-400 font-medium">{(toTroyOz(Number(form.weight_oz), form.weight_unit) * Number(form.purity)).toFixed(4)} troy oz</span>
               {Number(form.quantity) > 1 && (
-                <span className="ml-3">Total weight: <span className="text-gray-400 font-medium">{(Number(form.weight_oz) * Number(form.quantity)).toFixed(4)} troy oz</span> <span className="text-yellow-600">×{form.quantity}</span></span>
+                <span className="ml-3">Total weight: <span className="text-gray-400 font-medium">{(toTroyOz(Number(form.weight_oz), form.weight_unit) * Number(form.quantity)).toFixed(4)} troy oz</span> <span className="text-yellow-600">×{form.quantity}</span></span>
               )}
             </p>
           )}

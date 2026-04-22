@@ -29,6 +29,14 @@ const AMW_LABEL: Record<string, string> = {
   numismatic: '',
 }
 
+const TROY_OZ_PER_GRAM = 31.1034768
+
+function displayWeight(weightOz: number, unit: string): string {
+  if (unit === 'g') return `${(weightOz * TROY_OZ_PER_GRAM).toFixed(2)}g`
+  if (unit === 'kg') return `${((weightOz * TROY_OZ_PER_GRAM) / 1000).toFixed(4)}kg`
+  return `${weightOz}oz`
+}
+
 export default function Collection() {
   const navigate = useNavigate()
   const { formatMoney, formatUserMoney, currency, rate } = useCurrency()
@@ -310,8 +318,8 @@ export default function Collection() {
                 <div className="flex justify-between items-center">
                   {piece.metal_type !== 'numismatic' ? (
                     <span className="text-gray-600 text-xs">
-                      {piece.weight_oz}oz · {(Number(piece.purity) * 100).toFixed(1)}% · {AMW_LABEL[piece.metal_type] ?? 'AMW'} {(piece.weight_oz! * Number(piece.purity)).toFixed(4)}oz
-                      {piece.quantity > 1 && <span className="ml-1 text-yellow-500 font-medium">×{piece.quantity} = {(piece.weight_oz! * piece.quantity).toFixed(4)}oz total</span>}
+                      {displayWeight(piece.weight_oz!, piece.weight_unit)} · {(Number(piece.purity) * 100).toFixed(1)}% · {AMW_LABEL[piece.metal_type] ?? 'AMW'} {(piece.weight_oz! * Number(piece.purity)).toFixed(4)}oz
+                      {piece.quantity > 1 && <span className="ml-1 text-yellow-500 font-medium">×{piece.quantity} = {displayWeight(piece.weight_oz! * piece.quantity, piece.weight_unit)} total</span>}
                     </span>
                   ) : (
                     <span className="text-gray-600 text-xs">Numismatic</span>
@@ -401,7 +409,7 @@ export default function Collection() {
                       <span className="text-gray-600 text-xs">—</span>
                     ) : (
                       <>
-                        <div>{piece.weight_oz}oz{piece.quantity > 1 && <span className="text-yellow-600 text-xs ml-1">×{piece.quantity} = {(piece.weight_oz! * piece.quantity).toFixed(4)}oz</span>}</div>
+                        <div>{displayWeight(piece.weight_oz!, piece.weight_unit)}{piece.quantity > 1 && <span className="text-yellow-600 text-xs ml-1">×{piece.quantity} = {displayWeight(piece.weight_oz! * piece.quantity, piece.weight_unit)}</span>}</div>
                         <div className="text-gray-500 text-xs">{AMW_LABEL[piece.metal_type] ?? 'AMW'} {(piece.weight_oz! * Number(piece.purity)).toFixed(4)}oz</div>
                       </>
                     )}
