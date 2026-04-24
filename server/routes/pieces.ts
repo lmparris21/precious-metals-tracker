@@ -293,8 +293,8 @@ router.get('/api/summary', (_req, res) => {
       COALESCE(SUM(quantity), 0) AS total_pieces,
       SUM(CASE WHEN is_graded = 1 THEN quantity ELSE 0 END) AS graded_count,
       SUM(CASE WHEN is_graded = 0 THEN quantity ELSE 0 END) AS raw_count,
-      COALESCE(SUM(purchase_price * quantity), 0) AS total_purchase_cost,
-      COALESCE(SUM(estimated_value * quantity), 0) AS total_estimated_value
+      COALESCE(SUM(purchase_price), 0) AS total_purchase_cost,
+      COALESCE(SUM(estimated_value), 0) AS total_estimated_value
     FROM pieces
   `).get() as {
     total_pieces: number
@@ -310,9 +310,9 @@ router.get('/api/summary', (_req, res) => {
       COALESCE(SUM(p.quantity), 0) AS count,
       COALESCE(SUM(p.weight_oz * p.quantity), 0) AS total_weight_oz,
       COALESCE(SUM(p.weight_oz * p.purity * p.quantity), 0) AS total_pure_oz,
-      COALESCE(SUM(p.purchase_price * p.quantity), 0) AS total_purchase_cost,
+      COALESCE(SUM(p.purchase_price), 0) AS total_purchase_cost,
       COALESCE(SUM(ROUND(p.weight_oz * p.purity * COALESCE(sp.price_per_oz, 0) * p.quantity, 2)), 0) AS total_melt_value,
-      COALESCE(SUM(p.estimated_value * p.quantity), 0) AS total_estimated_value,
+      COALESCE(SUM(p.estimated_value), 0) AS total_estimated_value,
       COALESCE(sp.price_per_oz, 0) AS spot_price
     FROM pieces p
     LEFT JOIN spot_prices sp ON sp.metal_type = p.metal_type

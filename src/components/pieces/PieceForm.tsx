@@ -309,7 +309,7 @@ export default function PieceForm() {
           <h2 className="text-lg font-semibold text-gray-200">Financial Details</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Purchase Price ($)</label>
+              <label className={labelCls}>Total Purchase Cost ($)</label>
               <input type="number" step="any" min="0" value={form.purchase_price}
                 onChange={e => set('purchase_price', e.target.value)} placeholder="0.00" className={inputCls} />
             </div>
@@ -320,7 +320,7 @@ export default function PieceForm() {
             </div>
           </div>
           <div>
-            <label className={labelCls}>Estimated Value ($)</label>
+            <label className={labelCls}>Total Estimated Value ($)</label>
             <input type="number" step="any" min="0" value={form.estimated_value}
               onChange={e => set('estimated_value', e.target.value)} placeholder="0.00" className={inputCls} />
           </div>
