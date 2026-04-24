@@ -251,7 +251,7 @@ export default function PieceForm() {
             <p className="text-xs text-gray-500">
               {AMW_LABEL[form.metal_type] ?? 'AMW'}: <span className="text-gray-400 font-medium">{(toTroyOz(Number(form.weight_oz), form.weight_unit) * Number(form.purity)).toFixed(4)} troy oz</span>
               {Number(form.quantity) > 1 && (
-                <span className="ml-3">Total weight: <span className="text-gray-400 font-medium">{(toTroyOz(Number(form.weight_oz), form.weight_unit) * Number(form.quantity)).toFixed(4)} troy oz</span> <span className="text-yellow-600">×{form.quantity}</span></span>
+                <span className="ml-3">Total {AMW_LABEL[form.metal_type] ?? 'AMW'}: <span className="text-gray-400 font-medium">{(toTroyOz(Number(form.weight_oz), form.weight_unit) * Number(form.purity) * Number(form.quantity)).toFixed(4)} troy oz</span> <span className="text-yellow-600">×{form.quantity}</span></span>
               )}
             </p>
           )}

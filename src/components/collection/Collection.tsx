@@ -319,7 +319,7 @@ export default function Collection() {
                   {piece.metal_type !== 'numismatic' ? (
                     <span className="text-gray-600 text-xs">
                       {displayWeight(piece.weight_oz!, piece.weight_unit)} · {(Number(piece.purity) * 100).toFixed(1)}% · {AMW_LABEL[piece.metal_type] ?? 'AMW'} {(piece.weight_oz! * Number(piece.purity)).toFixed(4)}oz
-                      {piece.quantity > 1 && <span className="ml-1 text-yellow-500 font-medium">×{piece.quantity} = {displayWeight(piece.weight_oz! * piece.quantity, piece.weight_unit)} total</span>}
+                      {piece.quantity > 1 && <span className="ml-1 text-yellow-500 font-medium">×{piece.quantity} = {(piece.weight_oz! * Number(piece.purity) * piece.quantity).toFixed(4)}oz total</span>}
                     </span>
                   ) : (
                     <span className="text-gray-600 text-xs">Numismatic</span>
@@ -409,7 +409,7 @@ export default function Collection() {
                       <span className="text-gray-600 text-xs">—</span>
                     ) : (
                       <>
-                        <div>{displayWeight(piece.weight_oz!, piece.weight_unit)}{piece.quantity > 1 && <span className="text-yellow-600 text-xs ml-1">×{piece.quantity} = {displayWeight(piece.weight_oz! * piece.quantity, piece.weight_unit)}</span>}</div>
+                        <div>{displayWeight(piece.weight_oz!, piece.weight_unit)}{piece.quantity > 1 && <span className="text-yellow-600 text-xs ml-1">×{piece.quantity} = {(piece.weight_oz! * Number(piece.purity) * piece.quantity).toFixed(4)}oz</span>}</div>
                         <div className="text-gray-500 text-xs">{AMW_LABEL[piece.metal_type] ?? 'AMW'} {(piece.weight_oz! * Number(piece.purity)).toFixed(4)}oz</div>
                       </>
                     )}
