@@ -83,7 +83,7 @@ export default function PieceForm() {
         year: piece.year?.toString() ?? '',
         metal_type: piece.metal_type,
         piece_type: piece.piece_type,
-        weight_oz: piece.weight_oz != null ? fromTroyOz(piece.weight_oz, piece.weight_unit).toString() : '',
+        weight_oz: piece.weight_oz != null ? parseFloat(fromTroyOz(piece.weight_oz, piece.weight_unit).toFixed(6)).toString() : '',
         weight_unit: piece.weight_unit,
         purity: piece.purity?.toString() ?? '',
         quantity: piece.quantity?.toString() ?? '1',
