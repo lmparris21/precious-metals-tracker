@@ -37,6 +37,12 @@ function displayWeight(weightOz: number, unit: string): string {
   return `${weightOz}oz`
 }
 
+function weightInOriginalUnit(weightOz: number, unit: string): number {
+  if (unit === 'g') return weightOz * TROY_OZ_PER_GRAM
+  if (unit === 'kg') return (weightOz * TROY_OZ_PER_GRAM) / 1000
+  return weightOz
+}
+
 export default function Collection() {
   const navigate = useNavigate()
   const { formatMoney, formatUserMoney, currency, rate } = useCurrency()
@@ -107,7 +113,7 @@ export default function Collection() {
 
   function exportCSV() {
     const headers = [
-      'Name', 'Year', 'Metal', 'Type', 'Weight (oz)', 'Weight Unit', 'Purity',
+      'Name', 'Year', 'Metal', 'Type', 'Weight', 'Weight Unit', 'Purity',
       'Quantity', 'Graded', 'Grading Service', 'Grade', 'Cert Number',
       `Purchase Price (${currency})`, 'Purchase Date', `Estimated Value (${currency})`,
       `Melt Value (${currency})`, 'Notes'
@@ -126,7 +132,7 @@ export default function Collection() {
       escape(p.year),
       escape(p.metal_type),
       escape(p.piece_type),
-      escape(p.weight_oz != null ? Number(p.weight_oz).toFixed(4) : undefined),
+      escape(p.weight_oz != null ? weightInOriginalUnit(Number(p.weight_oz), p.weight_unit).toFixed(4) : undefined),
       escape(p.weight_unit),
       escape(p.purity != null ? Number(p.purity).toFixed(4) : undefined),
       escape(p.quantity),
