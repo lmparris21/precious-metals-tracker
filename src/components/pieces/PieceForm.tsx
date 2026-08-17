@@ -169,7 +169,7 @@ export default function PieceForm() {
           <h2 className="text-lg font-semibold text-gray-200 mb-4">Photos</h2>
           <PhotoUpload pieceId={savedPieceId} initialPhotos={savedPiecePhotos} />
         </div>
-        <button onClick={() => navigate('/collection')}
+        <button onClick={() => navigate(-1)}
           className="bg-yellow-500 hover:bg-yellow-400 text-gray-950 font-semibold px-6 py-2 rounded">
           Done
         </button>
@@ -179,6 +179,15 @@ export default function PieceForm() {
 
   return (
     <div className="max-w-2xl">
+      {isEditing && (
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-200 mb-4"
+        >
+          ← Back
+        </button>
+      )}
       <h1 className="text-2xl font-bold text-yellow-400 mb-6">
         {isEditing ? 'Edit Piece' : 'Add New Piece'}
       </h1>

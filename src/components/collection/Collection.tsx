@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getPieces, deletePiece, getPiece } from '../../api/pieces'
 import { useCurrency } from '../../context/CurrencyContext'
 import type { Piece, Photo } from '../../types/piece'
@@ -43,28 +43,67 @@ function weightInOriginalUnit(weightOz: number, unit: string): number {
   return weightOz
 }
 
+const METALS = ['silver', 'gold', 'platinum', 'palladium', 'numismatic'] as const
+const TYPES = ['coin', 'bar', 'round', 'other'] as const
+
 export default function Collection() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { formatMoney, formatUserMoney, currency, rate } = useCurrency()
   const [pieces, setPieces] = useState<Piece[]>([])
   const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [lightbox, setLightbox] = useState<LightboxState | null>(null)
 
-  const [metalFilter, setMetalFilter] = useState('')
-  const [typeFilter, setTypeFilter] = useState('')
-  const [gradedFilter, setGradedFilter] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [sortBy, setSortBy] = useState('created_at')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const viewMode = (searchParams.get('view') ?? 'grid') as ViewMode
+  const metalParam = searchParams.get('metal') ?? ''
+  const typeParam = searchParams.get('type') ?? ''
+  const metalFilters = metalParam ? metalParam.split(',') : []
+  const typeFilters = typeParam ? typeParam.split(',') : []
+  const gradedFilter = searchParams.get('graded') ?? ''
+  const searchQuery = searchParams.get('q') ?? ''
+  const sortBy = searchParams.get('sort') ?? 'created_at'
+  const sortDir = (searchParams.get('sort_dir') ?? 'desc') as 'asc' | 'desc'
+
+  function setParam(key: string, value: string) {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      if (value) next.set(key, value)
+      else next.delete(key)
+      return next
+    }, { replace: true })
+  }
+
+  function toggleChip(key: string, current: string[], value: string) {
+    const next = current.includes(value)
+      ? current.filter(v => v !== value)
+      : [...current, value]
+    setParam(key, next.join(','))
+  }
+
+  function setViewMode(mode: ViewMode) {
+    setParam('view', mode === 'grid' ? '' : mode)
+  }
+
+  function setSort(val: string) {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      next.set('sort', val)
+      next.delete('sort_dir')
+      return next
+    }, { replace: true })
+  }
 
   function handleSort(col: string) {
-    if (col === sortBy) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortBy(col)
-      setSortDir('asc')
-    }
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      if (col === sortBy) {
+        next.set('sort_dir', sortDir === 'asc' ? 'desc' : 'asc')
+      } else {
+        next.set('sort', col)
+        next.set('sort_dir', 'asc')
+      }
+      return next
+    }, { replace: true })
   }
 
   function SortTh({ col, children }: { col: string; children: React.ReactNode }) {
@@ -86,20 +125,22 @@ export default function Collection() {
     setLoading(true)
     try {
       const data = await getPieces({
-        metal_type: metalFilter || undefined,
-        piece_type: typeFilter || undefined,
         is_graded: gradedFilter === 'graded' ? true : gradedFilter === 'raw' ? false : undefined,
         q: searchQuery || undefined,
         sort: sortBy,
         sort_dir: sortDir,
       })
-      setPieces(data)
+      const filtered = data.filter(p =>
+        (metalFilters.length === 0 || metalFilters.includes(p.metal_type)) &&
+        (typeFilters.length === 0 || typeFilters.includes(p.piece_type))
+      )
+      setPieces(filtered)
     } catch {
       // ignore
     } finally {
       setLoading(false)
     }
-  }, [metalFilter, typeFilter, gradedFilter, searchQuery, sortBy, sortDir])
+  }, [metalParam, typeParam, gradedFilter, searchQuery, sortBy, sortDir])
 
   useEffect(() => { fetchPieces() }, [fetchPieces])
 
@@ -164,6 +205,13 @@ export default function Collection() {
     fetchPieces()
   }
 
+  const chipCls = (active: boolean) =>
+    `px-2.5 py-1 rounded text-xs capitalize transition-colors ${
+      active
+        ? 'bg-yellow-500 text-gray-950 font-semibold'
+        : 'bg-gray-800 text-gray-400 hover:text-gray-200'
+    }`
+
   return (
     <div>
       {lightbox && (
@@ -185,7 +233,7 @@ export default function Collection() {
             Grid
           </button>
           <button onClick={() => setViewMode('table')}
-            className={`px-3 py-1 rounded text-sm ${viewMode === 'table' ? 'bg-yellow-500 text-gray-950 font-semibond' : 'bg-gray-800 text-gray-400'}`}>
+            className={`px-3 py-1 rounded text-sm ${viewMode === 'table' ? 'bg-yellow-500 text-gray-950 font-semibold' : 'bg-gray-800 text-gray-400'}`}>
             Table
           </button>
           {pieces.length > 0 && (
@@ -198,49 +246,90 @@ export default function Collection() {
       </div>
 
       {/* Filter bar */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 mb-6 flex flex-wrap gap-3">
-        <input
-          type="text"
-          placeholder="Search pieces..."
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          className="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-yellow-500 flex-1 min-w-40"
-        />
-        <select value={metalFilter} onChange={e => setMetalFilter(e.target.value)}
-          className="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-100">
-          <option value="">All Metals</option>
-          <option value="silver">Silver</option>
-          <option value="gold">Gold</option>
-          <option value="platinum">Platinum</option>
-          <option value="palladium">Palladium</option>
-          <option value="numismatic">Numismatic</option>
-        </select>
-        <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-          className="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-100">
-          <option value="">All Types</option>
-          <option value="coin">Coin</option>
-          <option value="bar">Bar</option>
-          <option value="round">Round</option>
-          <option value="other">Other</option>
-        </select>
-        <select value={gradedFilter} onChange={e => setGradedFilter(e.target.value)}
-          className="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-100">
-          <option value="">Graded + Raw</option>
-          <option value="graded">Graded Only</option>
-          <option value="raw">Raw Only</option>
-        </select>
-        <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-          className="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-100">
-          <option value="created_at">Date Added</option>
-          <option value="name">Name</option>
-          <option value="metal_type">Metal</option>
-          <option value="piece_type">Type</option>
-          <option value="quantity">Qty</option>
-          <option value="weight_oz">Weight</option>
-          <option value="melt_value">Melt Value</option>
-          <option value="purchase_price">Purchase Price</option>
-          <option value="estimated_value">Est. Value</option>
-        </select>
+      <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 mb-6 space-y-3">
+        {/* Search + Sort */}
+        <div className="flex flex-wrap gap-3">
+          <div className="relative flex-1 min-w-40">
+            <input
+              type="text"
+              placeholder="Search pieces..."
+              value={searchQuery}
+              onChange={e => setParam('q', e.target.value)}
+              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 pr-8 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-yellow-500"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setParam('q', '')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 text-lg leading-none"
+              >
+                ×
+              </button>
+            )}
+          </div>
+          <select value={sortBy} onChange={e => setSort(e.target.value)}
+            className="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-100">
+            <option value="created_at">Date Added</option>
+            <option value="name">Name</option>
+            <option value="metal_type">Metal</option>
+            <option value="piece_type">Type</option>
+            <option value="quantity">Qty</option>
+            <option value="weight_oz">Weight</option>
+            <option value="melt_value">Melt Value</option>
+            <option value="purchase_price">Purchase Price</option>
+            <option value="estimated_value">Est. Value</option>
+          </select>
+        </div>
+
+        {/* Metal chips */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-gray-500 shrink-0">Metal:</span>
+          {METALS.map(m => (
+            <button key={m} onClick={() => toggleChip('metal', metalFilters, m)}
+              className={chipCls(metalFilters.includes(m))}>
+              {m}
+            </button>
+          ))}
+          {metalFilters.length > 0 && (
+            <button onClick={() => setParam('metal', '')}
+              className="text-xs text-gray-600 hover:text-gray-400 ml-1">
+              Clear
+            </button>
+          )}
+        </div>
+
+        {/* Type chips + Graded chips */}
+        <div className="flex items-center gap-6 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-gray-500 shrink-0">Type:</span>
+            {TYPES.map(t => (
+              <button key={t} onClick={() => toggleChip('type', typeFilters, t)}
+                className={chipCls(typeFilters.includes(t))}>
+                {t}
+              </button>
+            ))}
+            {typeFilters.length > 0 && (
+              <button onClick={() => setParam('type', '')}
+                className="text-xs text-gray-600 hover:text-gray-400 ml-1">
+                Clear
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-gray-500 shrink-0">Graded:</span>
+            {(['graded', 'raw'] as const).map(val => (
+              <button key={val} onClick={() => setParam('graded', gradedFilter === val ? '' : val)}
+                className={chipCls(gradedFilter === val)}>
+                {val === 'graded' ? 'Graded only' : 'Raw only'}
+              </button>
+            ))}
+            {gradedFilter && (
+              <button onClick={() => setParam('graded', '')}
+                className="text-xs text-gray-600 hover:text-gray-400 ml-1">
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Content */}
